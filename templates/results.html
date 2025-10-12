@@ -1,4 +1,3 @@
-<!-- Updated templates/results.html (dynamic for multiple exams) -->
 <!DOCTYPE html>
 <html lang="en" class="light">
 <head>
@@ -49,9 +48,14 @@
                         </tr>
                         <tr>
                             <th class="py-2">Percentage</th>
-                            <td class="py-2">{{ result['Percentage'] }}%</td>
+                            <td class="py-2 {{ 'text-red-600 dark:text-red-400' if result['Percentage'] < 50 else '' }}">{{ result['Percentage'] }}%</td>
                         </tr>
                     </table>
+                    {% if result['Percentage'] < 50 %}
+                        <p class="mt-4 text-red-600 dark:text-red-400 text-sm">
+                            You are required to retake this exam to pass the course. Please contact your instructor for information on registering for the resit.
+                        </p>
+                    {% endif %}
                 </div>
             {% endfor %}
         </div>
