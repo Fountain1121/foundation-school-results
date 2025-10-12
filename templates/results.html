@@ -1,40 +1,67 @@
+<!-- Updated templates/results.html (dynamic for multiple exams) -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Results for {{ name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body>
-    <div class="container">
-        <h1>Results for {{ name }}</h1>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
+    <header class="bg-white dark:bg-gray-800 shadow sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Results for {{ name }}</h1>
+            <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 focus:outline-none" aria-label="Toggle dark mode">
+                <svg class="w-6 h-6 text-gray-800 dark:text-gray-200" fill="currentColor" viewBox="0 0 20 20">
+                    <path id="sun" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.586 2.414a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414-1.414l.707-.707zM16 10a1 1 0 011-1h1a1 1 0 110 2h-1a1 1 0 01-1-1zm-1.414 4.586a1 1 0 011.414-1.414l.707.707a1 1 0 01-1.414 1.414l-.707-.707zM10 16a1 1 0 01-1 1v1a1 1 0 110-2v-1a1 1 0 011-1zm-4.586-1.414a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414-1.414l.707-.707zM3 10a1 1 0 01-1-1H1a1 1 0 110-2h1a1 1 0 011 1zm1.414-4.586a1 1 0 011.414-1.414l.707.707a1 1 0 01-1.414 1.414l-.707-.707zM10 14a4 4 0 100-8 4 4 0 000 8z" class="hidden dark:block"/>
+                    <path id="moon" d="M12.7 3.3a1 1 0 00-1.4.2 7 7 0 11-9.6 9.6 1 1 0 00-.2 1.4 1 1 0 001.6.2 9 9 0 1012.2-12.2 1 1 0 00-.6-1.2z" class="block dark:hidden"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                    <div class="mb-4 p-4 rounded-lg {{ 'bg-red-100 text-red-700' if category == 'error' else 'bg-yellow-100 text-yellow-700' }} transition-opacity duration-300">
+                        {{ message }}
+                    </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
-        {% if result1 %}
-            <h2>{{ exam1_name }}</h2>
-            <table>
-                <tr><th>Section A</th><td>{{ result1.section_a }}</td></tr>
-                <tr><th>Section B</th><td>{{ result1.section_b }}</td></tr>
-                <tr><th>Total</th><td>{{ result1.total }}</td></tr>
-                <tr><th>Percentage</th><td>{{ result1.percentage }}%</td></tr>
-            </table>
-        {% endif %}
-        {% if result2 %}
-            <h2>{{ exam2_name }}</h2>
-            <table>
-                <tr><th>Section A</th><td>{{ result2.section_a }}</td></tr>
-                <tr><th>Section B</th><td>{{ result2.section_b }}</td></tr>
-                <tr><th>Total</th><td>{{ result2.total }}</td></tr>
-                <tr><th>Percentage</th><td>{{ result2.percentage }}%</td></tr>
-            </table>
-        {% endif %}
-        <p><a href="{{ url_for('index') }}">Back to Home</a></p>
-    </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {% for exam_name, result in results.items() %}
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-4">{{ exam_name }}</h2>
+                    <table class="w-full text-left">
+                        <tr class="border-b dark:border-gray-600">
+                            <th class="py-2">Section A</th>
+                            <td class="py-2">{{ result['Section A'] }}</td>
+                        </tr>
+                        <tr class="border-b dark:border-gray-600">
+                            <th class="py-2">Section B</th>
+                            <td class="py-2">{{ result['Section B'] }}</td>
+                        </tr>
+                        <tr class="border-b dark:border-gray-600">
+                            <th class="py-2">Total</th>
+                            <td class="py-2">{{ result['Total'] }}</td>
+                        </tr>
+                        <tr>
+                            <th class="py-2">Percentage</th>
+                            <td class="py-2">{{ result['Percentage'] }}%</td>
+                        </tr>
+                    </table>
+                </div>
+            {% endfor %}
+        </div>
+        <p class="mt-6 text-center">
+            <a href="{{ url_for('index') }}" class="inline-block bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors duration-200">Back to Home</a>
+        </p>
+    </main>
+    <footer class="bg-white dark:bg-gray-800 py-4 text-center text-gray-600 dark:text-gray-400">
+        <p>&copy; 2025 Exam Results Portal. All rights reserved.</p>
+    </footer>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 </body>
 </html>

@@ -1,0 +1,61 @@
+<!-- templates/login.html -->
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
+    <header class="bg-white dark:bg-gray-800 shadow sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Login</h1>
+            <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 focus:outline-none" aria-label="Toggle dark mode">
+                <svg class="w-6 h-6 text-gray-800 dark:text-gray-200" fill="currentColor" viewBox="0 0 20 20">
+                    <path id="sun" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.586 2.414a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414-1.414l.707-.707zM16 10a1 1 0 011-1h1a1 1 0 110 2h-1a1 1 0 01-1-1zm-1.414 4.586a1 1 0 011.414-1.414l.707.707a1 1 0 01-1.414 1.414l-.707-.707zM10 16a1 1 0 01-1 1v1a1 1 0 110-2v-1a1 1 0 011-1zm-4.586-1.414a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414-1.414l.707-.707zM3 10a1 1 0 01-1-1H1a1 1 0 110-2h1a1 1 0 011 1zm1.414-4.586a1 1 0 011.414-1.414l.707.707a1 1 0 01-1.414 1.414l-.707-.707zM10 14a4 4 0 100-8 4 4 0 000 8z" class="hidden dark:block"/>
+                    <path id="moon" d="M12.7 3.3a1 1 0 00-1.4.2 7 7 0 11-9.6 9.6 1 1 0 00-.2 1.4 1 1 0 001.6.2 9 9 0 1012.2-12.2 1 1 0 00-.6-1.2z" class="block dark:hidden"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {{ 'bg-red-100 text-red-700' if category == 'error' else 'bg-yellow-100 text-yellow-700' }} transition-opacity duration-300">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Admin Login</h2>
+            <form method="POST" class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium">Username</label>
+                    <input type="text" id="username" name="username" required
+                           class="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium">Password</label>
+                    <input type="password" id="password" name="password" required
+                           class="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100">
+                </div>
+                <button type="submit"
+                        class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors duration-200">
+                    Login
+                </button>
+            </form>
+            <p class="mt-4 text-center">
+                <a href="{{ url_for('index') }}" class="text-blue-600 dark:text-blue-400 hover:underline">Back to Home</a>
+            </p>
+        </div>
+    </main>
+    <footer class="bg-white dark:bg-gray-800 py-4 text-center text-gray-600 dark:text-gray-400">
+        <p>&copy; 2025 Exam Results Portal. All rights reserved.</p>
+    </footer>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>

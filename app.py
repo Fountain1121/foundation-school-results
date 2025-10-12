@@ -1,323 +1,88 @@
+# app.py
 from flask import Flask, request, render_template, flash, redirect, url_for
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import os
 import re
+import pandas as pd
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'super_secret_key_123')  # Set SECRET_KEY on Render
 
-# Exam data (keep all your data here)
-EXAM1_NAME = "Now that you are born again"
-EXAM2_NAME = "Vision and Emphasis of LCC"
+# Flask-Login setup
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
-exam1 = {
-    "100925029": {"name": "Ansah Boakye Anna", "section_a": 36.0, "section_b": 55.0, "total": 91.0, "percentage": 91.0},
-    "100925114": {"name": "Okona Okyerewa Ernestina", "section_a": 31.0, "section_b": 54.0, "total": 85.0, "percentage": 85.0},
-    "100925133": {"name": "Tawiah Nadia", "section_a": 31.0, "section_b": 53.0, "total": 84.0, "percentage": 84.0},
-    "100925007": {"name": "Adamkie Jessica Agor", "section_a": 33.0, "section_b": 50.0, "total": 83.0, "percentage": 83.0},
-    "100925100": {"name": "Mensah Joana", "section_a": 31.0, "section_b": 52.0, "total": 83.0, "percentage": 83.0},
-    "100925111": {"name": "Odofoley Ruth Nortey", "section_a": 31.0, "section_b": 51.0, "total": 82.0, "percentage": 82.0},
-    "100925098": {"name": "Mensah Badua Baaba", "section_a": 30.0, "section_b": 52.0, "total": 82.0, "percentage": 82.0},
-    "100925030": {"name": "Ansah Offeibea Grace", "section_a": 31.0, "section_b": 51.0, "total": 82.0, "percentage": 82.0},
-    "100925123": {"name": "Quarshie Alex", "section_a": 30.0, "section_b": 51.0, "total": 81.0, "percentage": 81.0},
-    "100925060": {"name": "Dankwah Twumasiwaa Wendy", "section_a": 28.0, "section_b": 53.0, "total": 81.0, "percentage": 81.0},
-    "100925024": {"name": "Akotodanso E Rhoda", "section_a": 27.0, "section_b": 53.0, "total": 80.0, "percentage": 80.0},
-    "100925034": {"name": "Ariama Christopher Kwame", "section_a": 34.0, "section_b": 45.0, "total": 79.0, "percentage": 79.0},
-    "100925084": {"name": "Kudolo Kelvin", "section_a": 33.0, "section_b": 45.0, "total": 78.0, "percentage": 78.0},
-    "100925143": {"name": "Yambilla Desiree Karen", "section_a": 31.0, "section_b": 47.0, "total": 78.0, "percentage": 78.0},
-    "100925002": {"name": "Aboagye Antwiwaa Abena", "section_a": 29.0, "section_b": 49.0, "total": 78.0, "percentage": 78.0},
-    "100925135": {"name": "Tetteh Dede Yehoda", "section_a": 27.0, "section_b": 51.0, "total": 78.0, "percentage": 78.0},
-    "100925083": {"name": "Kodia Christabel", "section_a": 28.0, "section_b": 50.0, "total": 78.0, "percentage": 78.0},
-    "100925025": {"name": "Akpalu Blessing", "section_a": 34.0, "section_b": 43.0, "total": 77.0, "percentage": 77.0},
-    "100925097": {"name": "Mensah Asare Micheal", "section_a": 29.0, "section_b": 48.0, "total": 77.0, "percentage": 77.0},
-    "100925103": {"name": "Mintah Harriet", "section_a": 25.0, "section_b": 52.0, "total": 77.0, "percentage": 77.0},
-    "100925073": {"name": "Frimpong Brako Nana", "section_a": 33.0, "section_b": 43.0, "total": 76.0, "percentage": 76.0},
-    "100925004": {"name": "Aboagye Deborah", "section_a": 28.0, "section_b": 48.0, "total": 76.0, "percentage": 76.0},
-    "100925076": {"name": "Gilbert Fiifi Forson", "section_a": 25.0, "section_b": 51.0, "total": 76.0, "percentage": 76.0},
-    "100925010": {"name": "Adjani Grace Ola", "section_a": 35.0, "section_b": 40.0, "total": 75.0, "percentage": 75.0},
-    "100925119": {"name": "Orleans D Anowa Abena Naana", "section_a": 31.0, "section_b": 43.0, "total": 74.0, "percentage": 74.0},
-    "100925068": {"name": "Elipklim Donyo Esther", "section_a": 30.0, "section_b": 44.0, "total": 74.0, "percentage": 74.0},
-    "100925065": {"name": "Donkor Asamoah Amankwah Emmanuel", "section_a": 29.0, "section_b": 45.0, "total": 74.0, "percentage": 74.0},
-    "100925032": {"name": "Appiah Amanda", "section_a": 27.0, "section_b": 47.0, "total": 74.0, "percentage": 74.0},
-    "100925093": {"name": "Markwei Philip", "section_a": 26.0, "section_b": 48.0, "total": 74.0, "percentage": 74.0},
-    "100925085": {"name": "Kumi Awe Herbert", "section_a": 25.0, "section_b": 49.0, "total": 74.0, "percentage": 74.0},
-    "100925128": {"name": "Sarfo Boakye Keziah", "section_a": 30.0, "section_b": 43.0, "total": 73.0, "percentage": 73.0},
-    "100925121": {"name": "Otoo Manuel", "section_a": 29.0, "section_b": 44.0, "total": 73.0, "percentage": 73.0},
-    "100925107": {"name": "Nunoo Caleb", "section_a": 28.0, "section_b": 45.0, "total": 73.0, "percentage": 73.0},
-    "100925046": {"name": "Boadi Ani Lawrence", "section_a": 27.0, "section_b": 46.0, "total": 73.0, "percentage": 73.0},
-    "100925101": {"name": "Mensah Samuel", "section_a": 25.0, "section_b": 48.0, "total": 73.0, "percentage": 73.0},
-    "100925132": {"name": "Tawiah Alexina", "section_a": 30.0, "section_b": 42.0, "total": 72.0, "percentage": 72.0},
-    "100925125": {"name": "Quist Laura", "section_a": 33.0, "section_b": 38.0, "total": 71.0, "percentage": 71.0},
-    "100925064": {"name": "David Ankrah Hope", "section_a": 30.0, "section_b": 40.0, "total": 70.0, "percentage": 70.0},
-    "100925062": {"name": "Darkwa Emmanuella", "section_a": 28.0, "section_b": 42.0, "total": 70.0, "percentage": 70.0},
-    "100925053": {"name": "Bona Comfort Frimpong", "section_a": 27.0, "section_b": 43.0, "total": 70.0, "percentage": 70.0},
-    "100925091": {"name": "Larbi Elsie", "section_a": 25.0, "section_b": 45.0, "total": 70.0, "percentage": 70.0},
-    "100925150": {"name": "Agbo Jonathan", "section_a": 26.0, "section_b": 43.0, "total": 69.0, "percentage": 69.0},
-    "100925069": {"name": "Enning Precious", "section_a": 31.0, "section_b": 37.0, "total": 68.0, "percentage": 68.0},
-    "100925104": {"name": "Mintah Kwabena", "section_a": 22.0, "section_b": 46.0, "total": 68.0, "percentage": 68.0},
-    "100925051": {"name": "Boateng Mercy", "section_a": 28.0, "section_b": 40.0, "total": 68.0, "percentage": 68.0},
-    "100925016": {"name": "Agboyi Gifty", "section_a": 30.0, "section_b": 37.0, "total": 67.0, "percentage": 67.0},
-    "100925079": {"name": "Hammond Richmond", "section_a": 27.0, "section_b": 40.0, "total": 67.0, "percentage": 67.0},
-    "100925115": {"name": "Olurombi Alex Peculiar", "section_a": 25.0, "section_b": 41.0, "total": 66.0, "percentage": 66.0},
-    "100925049": {"name": "Boakye Emmanuel", "section_a": 22.0, "section_b": 44.0, "total": 66.0, "percentage": 66.0},
-    "100925090": {"name": "Larbi Bekoe Eldad", "section_a": 22.0, "section_b": 44.0, "total": 66.0, "percentage": 66.0},
-    "100925151": {"name": "Amoasi Maame Araba Nyanfiekuwah", "section_a": 24.0, "section_b": 41.0, "total": 65.0, "percentage": 65.0},
-    "100925131": {"name": "Sesenu Esther", "section_a": 25.0, "section_b": 40.0, "total": 65.0, "percentage": 65.0},
-    "100925028": {"name": "Ampofo Genevieve", "section_a": 27.0, "section_b": 37.0, "total": 64.0, "percentage": 64.0},
-    "100925048": {"name": "Boafo Bevelyn", "section_a": 25.0, "section_b": 39.0, "total": 64.0, "percentage": 64.0},
-    "100925052": {"name": "Bokor Adzo Nutifafaa", "section_a": 24.0, "section_b": 40.0, "total": 64.0, "percentage": 64.0},
-    "100925147": {"name": "Yevenu Ama Freda", "section_a": 24.0, "section_b": 40.0, "total": 64.0, "percentage": 64.0},
-    "100925080": {"name": "Horlonyo Venissa", "section_a": 29.0, "section_b": 34.0, "total": 63.0, "percentage": 63.0},
-    "100925116": {"name": "Opoku Priscilla", "section_a": 28.0, "section_b": 35.0, "total": 63.0, "percentage": 63.0},
-    "100925008": {"name": "Adetah Esther", "section_a": 23.0, "section_b": 40.0, "total": 63.0, "percentage": 63.0},
-    "100925153": {"name": "Robert Ghanney", "section_a": 22.0, "section_b": 41.0, "total": 63.0, "percentage": 63.0},
-    "100925038": {"name": "Arku Salvania", "section_a": 21.0, "section_b": 42.0, "total": 63.0, "percentage": 63.0},
-    "100925138": {"name": "Tsegah Edem Juliet", "section_a": 26.0, "section_b": 37.0, "total": 63.0, "percentage": 63.0},
-    "100925095": {"name": "Mensah Adoma Efua Christabel", "section_a": 20.0, "section_b": 43.0, "total": 63.0, "percentage": 63.0},
-    "100925021": {"name": "Ahlijah Kwame Mawunyo Caleb", "section_a": 26.0, "section_b": 36.0, "total": 62.0, "percentage": 62.0},
-    "100925056": {"name": "Busia Abrefa Chief", "section_a": 24.0, "section_b": 38.0, "total": 62.0, "percentage": 62.0},
-    "100925134": {"name": "Tekper Nuetey Stanley", "section_a": 23.0, "section_b": 39.0, "total": 62.0, "percentage": 62.0},
-    "100925001": {"name": "Aboagye Afua", "section_a": 26.0, "section_b": 36.0, "total": 62.0, "percentage": 62.0},
-    "100925006": {"name": "Acquah Sally", "section_a": 30.0, "section_b": 31.0, "total": 61.0, "percentage": 61.0},
-    "100925120": {"name": "Osei Ampegya Philip", "section_a": 25.0, "section_b": 36.0, "total": 61.0, "percentage": 61.0},
-    "100925075": {"name": "Gamese Wise Newton", "section_a": 27.0, "section_b": 34.0, "total": 61.0, "percentage": 61.0},
-    "100925022": {"name": "Ainguah Edmund Reginald", "section_a": 30.0, "section_b": 30.0, "total": 60.0, "percentage": 60.0},
-    "100925099": {"name": "Mensah Elvis", "section_a": 24.0, "section_b": 36.0, "total": 60.0, "percentage": 60.0},
-    "100925078": {"name": "Gyekyewaa Esther", "section_a": 27.0, "section_b": 32.0, "total": 59.0, "percentage": 59.0},
-    "100925139": {"name": "Tswum Franklin", "section_a": 25.0, "section_b": 34.0, "total": 59.0, "percentage": 59.0},
-    "100925070": {"name": "Enya Light Judith", "section_a": 25.0, "section_b": 34.0, "total": 59.0, "percentage": 59.0},
-    "100925102": {"name": "Mensah Snyda", "section_a": 20.0, "section_b": 38.0, "total": 58.0, "percentage": 58.0},
-    "100925118": {"name": "Oppong Emmanuel", "section_a": 28.0, "section_b": 30.0, "total": 58.0, "percentage": 58.0},
-    "100925117": {"name": "Oppong Cassandra", "section_a": 19.0, "section_b": 39.0, "total": 58.0, "percentage": 58.0},
-    "100925146": {"name": "Yeboah Adwoa Nana", "section_a": 28.0, "section_b": 29.0, "total": 57.0, "percentage": 57.0},
-    "100925137": {"name": "Torydery Vance", "section_a": 28.0, "section_b": 28.0, "total": 56.0, "percentage": 56.0},
-    "100925036": {"name": "Ariama Gift", "section_a": 23.0, "section_b": 33.0, "total": 56.0, "percentage": 56.0},
-    "100925041": {"name": "Asenso Serwaa Akua", "section_a": 18.0, "section_b": 38.0, "total": 56.0, "percentage": 56.0},
-    "100925142": {"name": "Xorvi Joshua", "section_a": 28.0, "section_b": 27.0, "total": 55.0, "percentage": 55.0},
-    "100925067": {"name": "Ebenezer Anderson", "section_a": 26.0, "section_b": 28.0, "total": 54.0, "percentage": 54.0},
-    "100925110": {"name": "Obeng Linda", "section_a": 20.0, "section_b": 34.0, "total": 54.0, "percentage": 54.0},
-    "100925106": {"name": "Nsiahmensah Dominic", "section_a": 15.0, "section_b": 39.0, "total": 54.0, "percentage": 54.0},
-    "100925144": {"name": "Yaotse Emefa Deborah", "section_a": 23.0, "section_b": 30.0, "total": 53.0, "percentage": 53.0},
-    "100925009": {"name": "Adjaho Selorm", "section_a": 23.0, "section_b": 30.0, "total": 53.0, "percentage": 53.0},
-    "100925037": {"name": "Ariama Heward", "section_a": 22.0, "section_b": 31.0, "total": 53.0, "percentage": 53.0},
-    "100925071": {"name": "Enyimah Kofi Armah", "section_a": 27.0, "section_b": 25.0, "total": 52.0, "percentage": 52.0},
-    "100925087": {"name": "Kwakye Thomassina Adwoa", "section_a": 27.0, "section_b": 25.0, "total": 52.0, "percentage": 52.0},
-    "100925003": {"name": "Aboagye Appiah Jewelna", "section_a": 22.0, "section_b": 30.0, "total": 52.0, "percentage": 52.0},
-    "100925072": {"name": "Eshun Sylvester", "section_a": 25.0, "section_b": 25.0, "total": 50.0, "percentage": 50.0},
-    "100925122": {"name": "Owoo Regina Thelma", "section_a": 20.0, "section_b": 30.0, "total": 50.0, "percentage": 50.0},
-    "100925047": {"name": "Boadi Joshua", "section_a": 21.0, "section_b": 28.0, "total": 49.0, "percentage": 49.0},
-    "100925105": {"name": "Normesinu Enyonam", "section_a": 19.0, "section_b": 30.0, "total": 49.0, "percentage": 49.0},
-    "100925019": {"name": "Ago Joel", "section_a": 28.0, "section_b": 20.0, "total": 48.0, "percentage": 48.0},
-    "100925061": {"name": "Dansoa Grace", "section_a": 17.0, "section_b": 31.0, "total": 48.0, "percentage": 48.0},
-    "100925082": {"name": "Kai Amoah Janet", "section_a": 23.0, "section_b": 24.0, "total": 47.0, "percentage": 47.0},
-    "100925035": {"name": "Ariama Emmanuel", "section_a": 22.0, "section_b": 25.0, "total": 47.0, "percentage": 47.0},
-    "100925012": {"name": "Adoley Mary Addo", "section_a": 23.0, "section_b": 24.0, "total": 47.0, "percentage": 47.0},
-    "100925113": {"name": "Offei Opoku Adoma Elaine", "section_a": 22.0, "section_b": 25.0, "total": 47.0, "percentage": 47.0},
-    "100925074": {"name": "Frimpong Christopher", "section_a": 23.0, "section_b": 23.0, "total": 46.0, "percentage": 46.0},
-    "100925020": {"name": "Agyarko Desmond", "section_a": 24.0, "section_b": 21.0, "total": 45.0, "percentage": 45.0},
-    "100925109": {"name": "Obeng Ampomah Gideon", "section_a": 18.0, "section_b": 27.0, "total": 45.0, "percentage": 45.0},
-    "100925018": {"name": "Aghoghorbia Onome Lawrencia", "section_a": 20.0, "section_b": 25.0, "total": 45.0, "percentage": 45.0},
-    "100925011": {"name": "Adjibolosoo Theodora", "section_a": 20.0, "section_b": 23.0, "total": 43.0, "percentage": 43.0},
-    "100925054": {"name": "Bosompem Awuah Kwabena", "section_a": 23.0, "section_b": 19.0, "total": 42.0, "percentage": 42.0},
-    "100925129": {"name": "Sarkodie Joan", "section_a": 19.0, "section_b": 23.0, "total": 42.0, "percentage": 42.0},
-    "100925005": {"name": "Abroso Eugene Kwetsu", "section_a": 20.0, "section_b": 22.0, "total": 42.0, "percentage": 42.0},
-    "100925031": {"name": "Appiah Akosua Sally Korang", "section_a": 18.0, "section_b": 22.0, "total": 40.0, "percentage": 40.0},
-    "100925063": {"name": "Darkwah Samuel", "section_a": 17.0, "section_b": 22.0, "total": 39.0, "percentage": 39.0},
-    "100925043": {"name": "Bentumah Lilian", "section_a": 15.0, "section_b": 24.0, "total": 39.0, "percentage": 39.0},
-    "100925141": {"name": "Wesoamo Alegewe Jessica", "section_a": 21.0, "section_b": 16.0, "total": 37.0, "percentage": 37.0},
-    "100925130": {"name": "Sarkodie Mackenzy", "section_a": 18.0, "section_b": 18.0, "total": 36.0, "percentage": 36.0},
-    "100925149": {"name": "Botchway Anita", "section_a": 18.0, "section_b": 14.0, "total": 32.0, "percentage": 32.0},
-    "100925040": {"name": "Asantewaa Mary", "section_a": 20.0, "section_b": 10.0, "total": 30.0, "percentage": 30.0},
-    "100925023": {"name": "Akosua Appiah Salomey Korang", "section_a": 23.0, "section_b": 0.0, "total": 23.0, "percentage": 23.0},
-    "100925013": {"name": "Adomako Betina", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925014": {"name": "Affotey Ernestina", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925015": {"name": "Afful Ansah Owusu Okyere", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925026": {"name": "Amanfo Festus", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925027": {"name": "Amedzo James Jude", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925033": {"name": "Appiah Michael", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925039": {"name": "Aryeetey Elizabeth", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925042": {"name": "Asiesi Alberta", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925045": {"name": "Blenyi Prince", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925050": {"name": "Boakye Samuel", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925055": {"name": "Brown Arthur Davidson", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925057": {"name": "Cobbinah Ohemaa Nana", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925058": {"name": "Coffie Godfred", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925059": {"name": "Cudjoe Laura", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925066": {"name": "Donkor Franklina Fiona", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925086": {"name": "Kusi Henewaa Senior", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925088": {"name": "Kyeremaa Mariam", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925089": {"name": "Lakupohigmanie Andy Woorbey Tobil", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925092": {"name": "Marfo Joseph", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925094": {"name": "Martey Kingsley", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925096": {"name": "Mensah Antekie Alberta", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925108": {"name": "Nyamedor Juliet", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925112": {"name": "Oduro Joshua Kwamena", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925124": {"name": "Quaye Lila", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925126": {"name": "Sadat Issifu", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925127": {"name": "Sarafina", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925136": {"name": "Tettey Richmond", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925140": {"name": "Wemegah Dzidzor Lordina", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925145": {"name": "Yayra Gborgenu Jemima", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925148": {"name": "Yiadom Boakye Grace", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925152": {"name": "Quayson Veronica", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
+# Hardcoded user for simplicity (change password in production)
+users = {
+    'admin': {
+        'password': generate_password_hash('admin_password')  # Change this to a strong password
+    }
 }
 
-exam2 = {
-    "100925084": {"name": "Kudolo Kelvin", "section_a": 79.0, "section_b": 18.0, "total": 97.0, "percentage": 97.0},
-    "100925029": {"name": "Ansah Boakye Anna", "section_a": 78.0, "section_b": 19.0, "total": 97.0, "percentage": 97.0},
-    "100925073": {"name": "Frimpong Brako Nana", "section_a": 77.0, "section_b": 18.0, "total": 95.0, "percentage": 95.0},
-    "100925127": {"name": "Sarafina", "section_a": 78.0, "section_b": 17.0, "total": 95.0, "percentage": 95.0},
-    "100925034": {"name": "Ariama Christopher Kwame", "section_a": 78.0, "section_b": 16.5, "total": 94.5, "percentage": 95.0},
-    "100925007": {"name": "Adamkie Jessica Agor", "section_a": 76.0, "section_b": 18.0, "total": 94.0, "percentage": 94.0},
-    "100925030": {"name": "Ansah Offeibea Grace", "section_a": 77.0, "section_b": 17.0, "total": 94.0, "percentage": 94.0},
-    "100925062": {"name": "Darkwa Emmanuella", "section_a": 77.0, "section_b": 17.0, "total": 94.0, "percentage": 94.0},
-    "100925143": {"name": "Yambilla Desiree Karen", "section_a": 76.0, "section_b": 17.0, "total": 93.0, "percentage": 93.0},
-    "100925068": {"name": "Elipklim Donyo Esther", "section_a": 75.0, "section_b": 18.0, "total": 93.0, "percentage": 93.0},
-    "100925076": {"name": "Gilbert Fiifi Forson", "section_a": 76.0, "section_b": 16.5, "total": 92.5, "percentage": 93.0},
-    "100925132": {"name": "Tawiah Alexina", "section_a": 74.0, "section_b": 18.5, "total": 92.5, "percentage": 93.0},
-    "100925135": {"name": "Tetteh Dede Yehoda", "section_a": 74.0, "section_b": 18.5, "total": 92.5, "percentage": 93.0},
-    "100925133": {"name": "Tawiah Nadia", "section_a": 73.0, "section_b": 19.0, "total": 92.0, "percentage": 92.0},
-    "100925022": {"name": "Ainguah Edmund Reginald", "section_a": 75.0, "section_b": 16.5, "total": 91.5, "percentage": 92.0},
-    "100925032": {"name": "Appiah Amanda", "section_a": 74.0, "section_b": 17.0, "total": 91.0, "percentage": 91.0},
-    "100925121": {"name": "Otoo Manuel", "section_a": 74.0, "section_b": 17.0, "total": 91.0, "percentage": 91.0},
-    "100925123": {"name": "Quarshie Alex", "section_a": 72.0, "section_b": 19.0, "total": 91.0, "percentage": 91.0},
-    "100925002": {"name": "Aboagye Antwiwaa Abena", "section_a": 76.0, "section_b": 14.5, "total": 90.5, "percentage": 91.0},
-    "100925146": {"name": "Yeboah Adwoa Nana", "section_a": 73.0, "section_b": 17.0, "total": 90.0, "percentage": 90.0},
-    "100925016": {"name": "Agboyi Gifty", "section_a": 74.0, "section_b": 15.0, "total": 89.0, "percentage": 89.0},
-    "100925065": {"name": "Donkor Asamoah Amankwah Emmanuel", "section_a": 74.0, "section_b": 15.0, "total": 89.0, "percentage": 89.0},
-    "100925083": {"name": "Kodia Christabel", "section_a": 73.0, "section_b": 15.5, "total": 88.5, "percentage": 89.0},
-    "100925125": {"name": "Quist Laura", "section_a": 71.0, "section_b": 17.5, "total": 88.5, "percentage": 89.0},
-    "100925134": {"name": "Tekper Nuetey Stanley", "section_a": 72.0, "section_b": 16.0, "total": 88.0, "percentage": 88.0},
-    "100925114": {"name": "Okona Okyerewa Ernestina", "section_a": 71.0, "section_b": 16.5, "total": 87.5, "percentage": 88.0},
-    "100925119": {"name": "Orleans D Anowa Abena Naana", "section_a": 70.0, "section_b": 17.0, "total": 87.0, "percentage": 87.0},
-    "100925051": {"name": "Boateng Mercy", "section_a": 72.0, "section_b": 15.0, "total": 87.0, "percentage": 87.0},
-    "100925080": {"name": "Horlonyo Venissa", "section_a": 71.0, "section_b": 15.5, "total": 86.5, "percentage": 87.0},
-    "100925072": {"name": "Eshun Sylvester", "section_a": 71.0, "section_b": 15.0, "total": 86.0, "percentage": 86.0},
-    "100925025": {"name": "Akpalu Blessing", "section_a": 67.0, "section_b": 19.0, "total": 86.0, "percentage": 86.0},
-    "100925087": {"name": "Kwakye Thomassina Adwoa", "section_a": 71.0, "section_b": 15.0, "total": 86.0, "percentage": 86.0},
-    "100925098": {"name": "Mensah Badua Baaba", "section_a": 69.0, "section_b": 17.0, "total": 86.0, "percentage": 86.0},
-    "100925064": {"name": "David Ankrah Hope", "section_a": 70.0, "section_b": 15.5, "total": 85.5, "percentage": 86.0},
-    "100925036": {"name": "Ariama Gift", "section_a": 70.0, "section_b": 15.0, "total": 85.0, "percentage": 85.0},
-    "100925095": {"name": "Mensah Adoma Efua Christabel", "section_a": 71.0, "section_b": 14.0, "total": 85.0, "percentage": 85.0},
-    "100925100": {"name": "Mensah Joana", "section_a": 69.0, "section_b": 16.0, "total": 85.0, "percentage": 85.0},
-    "100925108": {"name": "Nyamedor Juliet", "section_a": 70.0, "section_b": 14.5, "total": 84.5, "percentage": 85.0},
-    "100925107": {"name": "Nunoo Caleb", "section_a": 67.0, "section_b": 17.5, "total": 84.5, "percentage": 85.0},
-    "100925111": {"name": "Odofoley Ruth Nortey", "section_a": 69.0, "section_b": 15.5, "total": 84.5, "percentage": 85.0},
-    "100925138": {"name": "Tsegah Edem Juliet", "section_a": 71.0, "section_b": 13.0, "total": 84.0, "percentage": 84.0},
-    "100925060": {"name": "Dankwah Twumasiwaa Wendy", "section_a": 68.0, "section_b": 16.0, "total": 84.0, "percentage": 84.0},
-    "100925010": {"name": "Adjani Grace Ola", "section_a": 71.0, "section_b": 12.5, "total": 83.5, "percentage": 84.0},
-    "100925093": {"name": "Markwei Philip", "section_a": 69.0, "section_b": 14.5, "total": 83.5, "percentage": 84.0},
-    "100925041": {"name": "Asenso Serwaa Akua", "section_a": 65.0, "section_b": 18.0, "total": 83.0, "percentage": 83.0},
-    "100925001": {"name": "Aboagye Afua", "section_a": 70.0, "section_b": 13.0, "total": 83.0, "percentage": 83.0},
-    "100925075": {"name": "Gamese Wise Newton", "section_a": 68.0, "section_b": 14.5, "total": 82.5, "percentage": 83.0},
-    "100925046": {"name": "Boadi Ani Lawrence", "section_a": 65.0, "section_b": 17.0, "total": 82.0, "percentage": 82.0},
-    "100925137": {"name": "Torydery Vance", "section_a": 66.0, "section_b": 15.5, "total": 81.5, "percentage": 82.0},
-    "100925131": {"name": "Sesenu Esther", "section_a": 63.0, "section_b": 18.5, "total": 81.5, "percentage": 82.0},
-    "100925079": {"name": "Hammond Richmond", "section_a": 64.0, "section_b": 17.0, "total": 81.0, "percentage": 81.0},
-    "100925067": {"name": "Ebenezer Anderson", "section_a": 63.0, "section_b": 18.0, "total": 81.0, "percentage": 81.0},
-    "100925037": {"name": "Ariama Heward", "section_a": 69.0, "section_b": 11.5, "total": 80.5, "percentage": 81.0},
-    "100925116": {"name": "Opoku Priscilla", "section_a": 65.0, "section_b": 15.5, "total": 80.5, "percentage": 81.0},
-    "100925139": {"name": "Tswum Franklin", "section_a": 63.0, "section_b": 17.5, "total": 80.5, "percentage": 81.0},
-    "100925099": {"name": "Mensah Elvis", "section_a": 67.0, "section_b": 13.0, "total": 80.0, "percentage": 80.0},
-    "100925090": {"name": "Larbi Bekoe Eldad", "section_a": 66.0, "section_b": 14.0, "total": 80.0, "percentage": 80.0},
-    "100925027": {"name": "Amedzo James Jude", "section_a": 64.0, "section_b": 16.0, "total": 80.0, "percentage": 80.0},
-    "100925085": {"name": "Kumi Awe Herbert", "section_a": 63.0, "section_b": 17.0, "total": 80.0, "percentage": 80.0},
-    "100925004": {"name": "Aboagye Deborah", "section_a": 64.0, "section_b": 15.5, "total": 79.5, "percentage": 80.0},
-    "100925048": {"name": "Boafo Bevelyn", "section_a": 63.0, "section_b": 16.5, "total": 79.5, "percentage": 80.0},
-    "100925147": {"name": "Yevenu Ama Freda", "section_a": 64.0, "section_b": 15.5, "total": 79.5, "percentage": 80.0},
-    "100925128": {"name": "Sarfo Boakye Keziah", "section_a": 65.0, "section_b": 14.0, "total": 79.0, "percentage": 79.0},
-    "100925028": {"name": "Ampofo Genevieve", "section_a": 64.0, "section_b": 15.0, "total": 79.0, "percentage": 79.0},
-    "100925082": {"name": "Kai Amoah Janet", "section_a": 64.0, "section_b": 15.0, "total": 79.0, "percentage": 79.0},
-    "100925118": {"name": "Oppong Emmanuel", "section_a": 64.0, "section_b": 15.0, "total": 79.0, "percentage": 79.0},
-    "100925103": {"name": "Mintah Harriet", "section_a": 64.0, "section_b": 14.0, "total": 78.0, "percentage": 78.0},
-    "100925126": {"name": "Sadat Issifu", "section_a": 64.0, "section_b": 14.0, "total": 78.0, "percentage": 78.0},
-    "100925008": {"name": "Adetah Esther", "section_a": 65.0, "section_b": 12.5, "total": 77.5, "percentage": 78.0},
-    "100925071": {"name": "Enyimah Kofi Armah", "section_a": 64.0, "section_b": 13.5, "total": 77.5, "percentage": 78.0},
-    "100925009": {"name": "Adjaho Selorm", "section_a": 64.0, "section_b": 13.5, "total": 77.5, "percentage": 78.0},
-    "100925141": {"name": "Wesoamo Alegewe Jessica", "section_a": 65.0, "section_b": 12.5, "total": 77.5, "percentage": 78.0},
-    "100925150": {"name": "Agbo Jonathan", "section_a": 64.0, "section_b": 13.0, "total": 77.0, "percentage": 77.0},
-    "100925091": {"name": "Larbi Elsie", "section_a": 63.0, "section_b": 14.0, "total": 77.0, "percentage": 77.0},
-    "100925053": {"name": "Bona Comfort Frimpong", "section_a": 65.0, "section_b": 12.0, "total": 77.0, "percentage": 77.0},
-    "100925101": {"name": "Mensah Samuel", "section_a": 64.0, "section_b": 13.0, "total": 77.0, "percentage": 77.0},
-    "100925120": {"name": "Osei Ampegya Philip", "section_a": 61.0, "section_b": 15.5, "total": 76.5, "percentage": 77.0},
-    "100925088": {"name": "Kyeremaa Mariam", "section_a": 63.0, "section_b": 13.0, "total": 76.0, "percentage": 76.0},
-    "100925142": {"name": "Xorvi Joshua", "section_a": 64.0, "section_b": 11.5, "total": 75.5, "percentage": 76.0},
-    "100925097": {"name": "Mensah Asare Micheal", "section_a": 63.0, "section_b": 12.5, "total": 75.5, "percentage": 76.0},
-    "100925047": {"name": "Boadi Joshua", "section_a": 62.0, "section_b": 13.5, "total": 75.5, "percentage": 76.0},
-    "100925061": {"name": "Dansoa Grace", "section_a": 60.0, "section_b": 15.5, "total": 75.5, "percentage": 76.0},
-    "100925078": {"name": "Gyekyewaa Esther", "section_a": 66.0, "section_b": 9.5, "total": 75.5, "percentage": 76.0},
-    "100925018": {"name": "Aghoghorbia Onome Lawrencia", "section_a": 68.0, "section_b": 7.0, "total": 75.0, "percentage": 75.0},
-    "100925003": {"name": "Aboagye Appiah Jewelna", "section_a": 62.0, "section_b": 13.0, "total": 75.0, "percentage": 75.0},
-    "100925024": {"name": "Akotodanso E Rhoda", "section_a": 61.0, "section_b": 14.0, "total": 75.0, "percentage": 75.0},
-    "100925035": {"name": "Ariama Emmanuel", "section_a": 63.0, "section_b": 11.0, "total": 74.0, "percentage": 74.0},
-    "100925052": {"name": "Bokor Adzo Nutifafaa", "section_a": 61.0, "section_b": 13.0, "total": 74.0, "percentage": 74.0},
-    "100925105": {"name": "Normesinu Enyonam", "section_a": 65.0, "section_b": 9.0, "total": 74.0, "percentage": 74.0},
-    "100925026": {"name": "Amanfo Festus", "section_a": 61.0, "section_b": 13.0, "total": 74.0, "percentage": 74.0},
-    "100925115": {"name": "Olurombi Alex Peculiar", "section_a": 60.0, "section_b": 13.5, "total": 73.5, "percentage": 74.0},
-    "100925074": {"name": "Frimpong Christopher", "section_a": 60.0, "section_b": 12.5, "total": 72.5, "percentage": 73.0},
-    "100925019": {"name": "Ago Joel", "section_a": 60.0, "section_b": 12.0, "total": 72.0, "percentage": 72.0},
-    "100925021": {"name": "Ahlijah Kwame Mawunyo Caleb", "section_a": 58.0, "section_b": 14.0, "total": 72.0, "percentage": 72.0},
-    "100925006": {"name": "Acquah Sally", "section_a": 63.0, "section_b": 9.0, "total": 72.0, "percentage": 72.0},
-    "100925151": {"name": "Amoasi Maame Araba Nyanfiekuwah", "section_a": 57.0, "section_b": 14.5, "total": 71.5, "percentage": 72.0},
-    "100925039": {"name": "Aryeetey Elizabeth", "section_a": 58.0, "section_b": 13.0, "total": 71.0, "percentage": 71.0},
-    "100925056": {"name": "Busia Abrefa Chief", "section_a": 55.0, "section_b": 15.5, "total": 70.5, "percentage": 71.0},
-    "100925011": {"name": "Adjibolosoo Theodora", "section_a": 59.0, "section_b": 11.5, "total": 70.5, "percentage": 71.0},
-    "100925110": {"name": "Obeng Linda", "section_a": 60.0, "section_b": 10.0, "total": 70.0, "percentage": 70.0},
-    "100925005": {"name": "Abroso Eugene Kwetsu", "section_a": 60.0, "section_b": 10.0, "total": 70.0, "percentage": 70.0},
-    "100925012": {"name": "Adoley Mary Addo", "section_a": 57.0, "section_b": 12.0, "total": 69.0, "percentage": 69.0},
-    "100925069": {"name": "Enning Precious", "section_a": 59.0, "section_b": 10.0, "total": 69.0, "percentage": 69.0},
-    "100925054": {"name": "Bosompem Awuah Kwabena", "section_a": 59.0, "section_b": 8.5, "total": 67.5, "percentage": 68.0},
-    "100925122": {"name": "Owoo Regina Thelma", "section_a": 54.0, "section_b": 12.0, "total": 66.0, "percentage": 66.0},
-    "100925070": {"name": "Enya Light Judith", "section_a": 54.0, "section_b": 11.0, "total": 65.0, "percentage": 65.0},
-    "100925109": {"name": "Obeng Ampomah Gideon", "section_a": 53.0, "section_b": 12.0, "total": 65.0, "percentage": 65.0},
-    "100925106": {"name": "Nsiahmensah Dominic", "section_a": 57.0, "section_b": 7.5, "total": 64.5, "percentage": 65.0},
-    "100925015": {"name": "Afful Ansah Owusu Okyere", "section_a": 54.0, "section_b": 10.5, "total": 64.5, "percentage": 65.0},
-    "100925033": {"name": "Appiah Michael", "section_a": 50.0, "section_b": 14.0, "total": 64.0, "percentage": 64.0},
-    "100925023": {"name": "Akosua Appiah Salomey Korang", "section_a": 55.0, "section_b": 8.5, "total": 63.5, "percentage": 64.0},
-    "100925104": {"name": "Mintah Kwabena", "section_a": 51.0, "section_b": 12.5, "total": 63.5, "percentage": 64.0},
-    "100925130": {"name": "Sarkodie Mackenzy", "section_a": 51.0, "section_b": 12.0, "total": 63.0, "percentage": 63.0},
-    "100925038": {"name": "Arku Salvania", "section_a": 50.0, "section_b": 12.0, "total": 62.0, "percentage": 62.0},
-    "100925020": {"name": "Agyarko Desmond", "section_a": 50.0, "section_b": 9.5, "total": 59.5, "percentage": 60.0},
-    "100925031": {"name": "Appiah Akosua Sally Korang", "section_a": 52.0, "section_b": 7.5, "total": 59.5, "percentage": 60.0},
-    "100925149": {"name": "Botchway Anita", "section_a": 51.0, "section_b": 8.0, "total": 59.0, "percentage": 59.0},
-    "100925043": {"name": "Bentumah Lilian", "section_a": 51.0, "section_b": 6.5, "total": 57.5, "percentage": 58.0},
-    "100925102": {"name": "Mensah Snyda", "section_a": 47.0, "section_b": 10.5, "total": 57.5, "percentage": 58.0},
-    "100925112": {"name": "Oduro Joshua Kwamena", "section_a": 50.0, "section_b": 5.0, "total": 55.0, "percentage": 55.0},
-    "100925152": {"name": "Quayson Veronica", "section_a": 48.0, "section_b": 7.0, "total": 55.0, "percentage": 55.0},
-    "100925049": {"name": "Boakye Emmanuel", "section_a": 49.0, "section_b": 5.0, "total": 54.0, "percentage": 54.0},
-    "100925113": {"name": "Offei Opoku Adoma Elaine", "section_a": 52.0, "section_b": 1.0, "total": 53.0, "percentage": 53.0},
-    "100925050": {"name": "Boakye Samuel", "section_a": 38.0, "section_b": 7.0, "total": 45.0, "percentage": 45.0},
-    "100925040": {"name": "Asantewaa Mary", "section_a": 37.0, "section_b": 7.5, "total": 44.5, "percentage": 45.0},
-    "100925129": {"name": "Sarkodie Joan", "section_a": 36.0, "section_b": 7.5, "total": 43.5, "percentage": 44.0},
-    "100925013": {"name": "Adomako Betina", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925014": {"name": "Affotey Ernestina", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925042": {"name": "Asiesi Alberta", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925045": {"name": "Blenyi Prince", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925055": {"name": "Brown Arthur Davidson", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925057": {"name": "Cobbinah Ohemaa Nana", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925058": {"name": "Coffie Godfred", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925059": {"name": "Cudjoe Laura", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925063": {"name": "Darkwah Samuel", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925066": {"name": "Donkor Franklina Fiona", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925086": {"name": "Kusi Henewaa Senior", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925089": {"name": "Lakupohigmanie Andy Woorbey Tobil", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925092": {"name": "Marfo Joseph", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925094": {"name": "Martey Kingsley", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925117": {"name": "Oppong Cassandra", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925124": {"name": "Quaye Lila", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925136": {"name": "Tettey Richmond", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925140": {"name": "Wemegah Dzidzor Lordina", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925144": {"name": "Yaotse Emefa Deborah", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925145": {"name": "Yayra Gborgenu Jemima", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-    "100925148": {"name": "Yiadom Boakye Grace", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
-}
+class User(UserMixin):
+    def __init__(self, id):
+        self.id = id
+
+@login_manager.user_loader
+def load_user(user_id):
+    if user_id in users:
+        return User(user_id)
+    return None
+
+# Load exams dynamically from 'data/' directory
+def load_exams():
+    exams = {}
+    data_dir = 'data'
+    if not os.path.exists(data_dir):
+        return exams
+    
+    for file_name in os.listdir(data_dir):
+        if file_name.endswith('.xlsx'):
+            exam_name = os.path.splitext(file_name)[0]  # Filename without .xlsx
+            file_path = os.path.join(data_dir, file_name)
+            try:
+                df = pd.read_excel(file_path, engine='openpyxl')
+                df['ID'] = df['ID'].astype(str)  # Ensure ID is string
+                df.set_index('ID', inplace=True)
+                exams[exam_name] = df.to_dict(orient='index')
+            except Exception as e:
+                print(f"Error loading {file_name}: {e}")
+    return exams
 
 # Validate student ID format (assuming 9-digit IDs)
 def is_valid_student_id(student_id):
     return bool(re.match(r'^\d{9}$', student_id))
 
+# Login route
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        if username in users and check_password_hash(users[username]['password'], password):
+            user = User(username)
+            login_user(user)
+            flash('Logged in successfully.', 'success')
+            return redirect(url_for('admin'))
+        else:
+            flash('Invalid username or password.', 'error')
+    return render_template('login.html')
+
+# Logout route
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('Logged out successfully.', 'success')
+    return redirect(url_for('index'))
+
 # Home page
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    exams = load_exams()
+    
     if request.method == 'POST':
         student_id = request.form.get('student_id', '').strip()
         
@@ -329,38 +94,31 @@ def index():
             flash('Invalid Student ID format. Must be a 9-digit number.', 'error')
             return redirect(url_for('index'))
 
-        # Check if ID exists in either exam
-        result1 = exam1.get(student_id)
-        result2 = exam2.get(student_id)
-
-        if not result1 and not result2:
+        # Collect results from all exams
+        results = {}
+        name = 'Unknown'
+        for exam_name, exam_data in exams.items():
+            if student_id in exam_data:
+                result = exam_data[student_id]
+                if result['Total'] > 0.0:  # Skip if incomplete
+                    results[exam_name] = result
+                if 'Name' in result:
+                    name = result['Name']
+        
+        if not results:
             flash('No results found for this Student ID.', 'error')
             return redirect(url_for('index'))
 
-        # Handle name retrieval
-        name = result1['name'] if result1 else (result2['name'] if result2 else 'Unknown')
-        
-        # Check for incomplete data
-        if result1 and result1['total'] == 0.0:
-            result1 = None
-            flash(f'No valid results for {name} in {EXAM1_NAME}.', 'warning')
-        if result2 and result2['total'] == 0.0:
-            result2 = None
-            flash(f'No valid results for {name} in {EXAM2_NAME}.', 'warning')
+        return render_template('results.html', name=name, results=results)
 
-        if not result1 and not result2:
-            return redirect(url_for('index'))
-
-        return render_template('results.html', name=name, result1=result1, result2=result2,
-                               exam1_name=EXAM1_NAME, exam2_name=EXAM2_NAME)
-
-    return render_template('index.html')
+    return render_template('index.html', is_authenticated=current_user.is_authenticated)
 
 # Admin view to see all results
 @app.route('/admin')
+@login_required
 def admin():
-    return render_template('admin.html', exam1=exam1, exam2=exam2,
-                           exam1_name=EXAM1_NAME, exam2_name=EXAM2_NAME)
+    exams = load_exams()
+    return render_template('admin.html', exams=exams)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
