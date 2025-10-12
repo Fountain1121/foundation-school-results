@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, request, render_template, flash, redirect, url_for
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import os
@@ -46,7 +45,9 @@ def load_exams():
                 df = pd.read_excel(file_path, engine='openpyxl')
                 df['ID'] = df['ID'].astype(str)  # Ensure ID is string
                 df.set_index('ID', inplace=True)
-                exams[exam_name] = df.to_dict(orient='index')
+                # Calculate percentage as Total * 100
+                df['CalculatedPercentage'] = df['Total'] * 100
+                exams[exam_name] = df[['Name', 'Section A', 'Section B', 'Total', 'CalculatedPercentage']].to_dict(orient='index')
             except Exception as e:
                 print(f"Error loading {file_name}: {e}")
     return exams
@@ -96,20 +97,22 @@ def index():
 
         # Collect results from all exams
         results = {}
-        name = 'Unknown'
         for exam_name, exam_data in exams.items():
             if student_id in exam_data:
                 result = exam_data[student_id]
                 if result['Total'] > 0.0:  # Skip if incomplete
-                    results[exam_name] = result
-                if 'Name' in result:
-                    name = result['Name']
+                    results[exam_name] = {
+                        'Section A': result['Section A'],
+                        'Section B': result['Section B'],
+                        'Total': result['Total'],
+                        'Percentage': result['CalculatedPercentage']
+                    }
         
         if not results:
             flash('No results found for this Student ID.', 'error')
             return redirect(url_for('index'))
 
-        return render_template('results.html', name=name, results=results)
+        return render_template('results.html', results=results)
 
     return render_template('index.html', is_authenticated=current_user.is_authenticated)
 
@@ -119,7 +122,3 @@ def index():
 def admin():
     exams = load_exams()
     return render_template('admin.html', exams=exams)
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)

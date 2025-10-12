@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Results for {{ name }}</title>
+    <title>Exam Results</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
     <header class="bg-white dark:bg-gray-800 shadow sticky top-0 z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold">Results for {{ name }}</h1>
+            <h1 class="text-2xl font-bold">Exam Results</h1>
             <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 focus:outline-none" aria-label="Toggle dark mode">
                 <svg class="w-6 h-6 text-gray-800 dark:text-gray-200" fill="currentColor" viewBox="0 0 20 20">
                     <path id="sun" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.586 2.414a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414-1.414l.707-.707zM16 10a1 1 0 011-1h1a1 1 0 110 2h-1a1 1 0 01-1-1zm-1.414 4.586a1 1 0 011.414-1.414l.707.707a1 1 0 01-1.414 1.414l-.707-.707zM10 16a1 1 0 01-1 1v1a1 1 0 110-2v-1a1 1 0 011-1zm-4.586-1.414a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414-1.414l.707-.707zM3 10a1 1 0 01-1-1H1a1 1 0 110-2h1a1 1 0 011 1zm1.414-4.586a1 1 0 011.414-1.414l.707.707a1 1 0 01-1.414 1.414l-.707-.707zM10 14a4 4 0 100-8 4 4 0 000 8z" class="hidden dark:block"/>
@@ -48,7 +48,7 @@
                         </tr>
                         <tr>
                             <th class="py-2">Percentage</th>
-                            <td class="py-2 {{ 'text-red-600 dark:text-red-400' if result['Percentage'] < 50 else '' }}">{{ result['Percentage'] }}%</td>
+                            <td class="py-2 {{ 'text-red-600 dark:text-red-400' if result['Percentage'] < 50 else '' }}">{{ result['Percentage']|round(2) }}%</td>
                         </tr>
                     </table>
                     {% if result['Percentage'] < 50 %}
