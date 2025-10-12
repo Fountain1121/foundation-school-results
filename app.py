@@ -45,9 +45,8 @@ def load_exams():
                 df = pd.read_excel(file_path, engine='openpyxl')
                 df['ID'] = df['ID'].astype(str)  # Ensure ID is string
                 df.set_index('ID', inplace=True)
-                # Calculate percentage as Total * 100
-                df['CalculatedPercentage'] = df['Total'] * 100
-                exams[exam_name] = df[['Name', 'Section A', 'Section B', 'Total', 'CalculatedPercentage']].to_dict(orient='index')
+                # Use Total directly as percentage (no multiplication)
+                exams[exam_name] = df[['Name', 'Section A', 'Section B', 'Total']].to_dict(orient='index')
             except Exception as e:
                 print(f"Error loading {file_name}: {e}")
     return exams
@@ -105,7 +104,7 @@ def index():
                         'Section A': result['Section A'],
                         'Section B': result['Section B'],
                         'Total': result['Total'],
-                        'Percentage': result['CalculatedPercentage']
+                        'Percentage': result['Total']  # Use Total directly as percentage
                     }
         
         if not results:
@@ -122,3 +121,7 @@ def index():
 def admin():
     exams = load_exams()
     return render_template('admin.html', exams=exams)
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)

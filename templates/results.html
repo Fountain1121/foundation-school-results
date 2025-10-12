@@ -48,7 +48,7 @@
                         </tr>
                         <tr>
                             <th class="py-2">Percentage</th>
-                            <td class="py-2 {{ 'text-red-600 dark:text-red-400' if result['Percentage'] < 50 else '' }}">{{ result['Percentage']|round(2) }}%</td>
+                            <td class="py-2 {{ 'text-red-600 dark:text-red-400' if result['Percentage'] < 50 else '' }}">{{ result['Percentage'] }}%</td>
                         </tr>
                     </table>
                     {% if result['Percentage'] < 50 %}
