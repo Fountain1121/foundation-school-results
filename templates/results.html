@@ -3,68 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Exam Results</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>Results for {{ name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body class="bg-gray-100 p-6">
-    <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
-        <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Results for {{ name }} (ID: {{ request.form.get('student_id') }})</h1>
-
+<body>
+    <div class="container">
+        <h1>Results for {{ name }}</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
         {% if result1 %}
-            <h2 class="text-2xl font-semibold mb-4 text-gray-700">{{ exam1_name }}</h2>
-            <table class="w-full mb-4 border-collapse border border-gray-300">
-                <thead>
-                    <tr class="bg-gray-200">
-                        <th class="p-2 border border-gray-300">Section A</th>
-                        <th class="p-2 border border-gray-300">Section B</th>
-                        <th class="p-2 border border-gray-300">Total</th>
-                        <th class="p-2 border border-gray-300">Percentage</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="p-2 border border-gray-300 text-center">{{ result1.section_a }}</td>
-                        <td class="p-2 border border-gray-300 text-center">{{ result1.section_b }}</td>
-                        <td class="p-2 border border-gray-300 text-center {% if result1.total < 50 %}text-red-500 font-bold{% endif %}">{{ result1.total }}</td>
-                        <td class="p-2 border border-gray-300 text-center {% if result1.total < 50 %}text-red-500 font-bold{% endif %}">{{ result1.percentage }}%</td>
-                    </tr>
-                </tbody>
+            <h2>{{ exam1_name }}</h2>
+            <table>
+                <tr><th>Section A</th><td>{{ result1.section_a }}</td></tr>
+                <tr><th>Section B</th><td>{{ result1.section_b }}</td></tr>
+                <tr><th>Total</th><td>{{ result1.total }}</td></tr>
+                <tr><th>Percentage</th><td>{{ result1.percentage }}%</td></tr>
             </table>
-            {% if result1.total < 50 %}
-                <p class="text-red-500 mb-6">You would need to take the exam again in order to pass and be moved to the next class. Thank you.</p>
-            {% endif %}
-        {% else %}
-            <p class="mb-6 text-gray-600">No results available for {{ exam1_name }}.</p>
         {% endif %}
-
         {% if result2 %}
-            <h2 class="text-2xl font-semibold mb-4 text-gray-700">{{ exam2_name }}</h2>
-            <table class="w-full mb-4 border-collapse border border-gray-300">
-                <thead>
-                    <tr class="bg-gray-200">
-                        <th class="p-2 border border-gray-300">Section A</th>
-                        <th class="p-2 border border-gray-300">Section B</th>
-                        <th class="p-2 border border-gray-300">Total</th>
-                        <th class="p-2 border border-gray-300">Percentage</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="p-2 border border-gray-300 text-center">{{ result2.section_a }}</td>
-                        <td class="p-2 border border-gray-300 text-center">{{ result2.section_b }}</td>
-                        <td class="p-2 border border-gray-300 text-center {% if result2.total < 50 %}text-red-500 font-bold{% endif %}">{{ result2.total }}</td>
-                        <td class="p-2 border border-gray-300 text-center {% if result2.total < 50 %}text-red-500 font-bold{% endif %}">{{ result2.percentage }}%</td>
-                    </tr>
-                </tbody>
+            <h2>{{ exam2_name }}</h2>
+            <table>
+                <tr><th>Section A</th><td>{{ result2.section_a }}</td></tr>
+                <tr><th>Section B</th><td>{{ result2.section_b }}</td></tr>
+                <tr><th>Total</th><td>{{ result2.total }}</td></tr>
+                <tr><th>Percentage</th><td>{{ result2.percentage }}%</td></tr>
             </table>
-            {% if result2.total < 50 %}
-                <p class="text-red-500 mb-6">You would need to take the exam again in order to pass and be moved to the next class. Thank you.</p>
-            {% endif %}
-        {% else %}
-            <p class="mb-6 text-gray-600">No results available for {{ exam2_name }}.</p>
         {% endif %}
-
-        <a href="{{ url_for('index') }}" class="block text-center text-blue-500 hover:underline">Back to Home</a>
+        <p><a href="{{ url_for('index') }}">Back to Home</a></p>
     </div>
 </body>
 </html>

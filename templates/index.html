@@ -3,28 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Exam Results</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>Exam Results Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Access Your Exam Results</h1>
+<body>
+    <div class="container">
+        <h1>Exam Results Portal</h1>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="mb-4 p-4 rounded {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
-                        {{ message }}
-                    </div>
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
-        <form method="POST" class="space-y-4">
-            <div>
-                <label for="student_id" class="block text-sm font-medium text-gray-700">Student ID</label>
-                <input type="text" id="student_id" name="student_id" class="mt-1 p-2 w-full border rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., 100925029" required>
-            </div>
-            <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded w-full hover:bg-blue-600 transition duration-200">View Results</button>
+        <form method="POST" action="{{ url_for('index') }}">
+            <label for="student_id">Enter Student ID (9 digits):</label>
+            <input type="text" id="student_id" name="student_id" required>
+            <button type="submit">View Results</button>
         </form>
+        <p><a href="{{ url_for('admin') }}">Admin View (All Results)</a></p>
     </div>
 </body>
 </html>

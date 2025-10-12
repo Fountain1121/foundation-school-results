@@ -1,10 +1,11 @@
 from flask import Flask, request, render_template, flash, redirect, url_for
-import json
+import os
+import re
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_key_123'  # For flash messages
+app.secret_key = os.getenv('SECRET_KEY', 'super_secret_key_123')  # Set SECRET_KEY on Render
 
-# Exam data
+# Exam data (keep all your data here)
 EXAM1_NAME = "Now that you are born again"
 EXAM2_NAME = "Vision and Emphasis of LCC"
 
@@ -310,13 +311,22 @@ exam2 = {
     "100925148": {"name": "Yiadom Boakye Grace", "section_a": 0.0, "section_b": 0.0, "total": 0.0, "percentage": 0.0},
 }
 
+# Validate student ID format (assuming 9-digit IDs)
+def is_valid_student_id(student_id):
+    return bool(re.match(r'^\d{9}$', student_id))
+
 # Home page
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        student_id = request.form.get('student_id').strip()
+        student_id = request.form.get('student_id', '').strip()
+        
+        # Validate input
         if not student_id:
             flash('Student ID is required!', 'error')
+            return redirect(url_for('index'))
+        if not is_valid_student_id(student_id):
+            flash('Invalid Student ID format. Must be a 9-digit number.', 'error')
             return redirect(url_for('index'))
 
         # Check if ID exists in either exam
@@ -327,13 +337,31 @@ def index():
             flash('No results found for this Student ID.', 'error')
             return redirect(url_for('index'))
 
-        # Assume name is the same, take from one that has it
+        # Handle name retrieval
         name = result1['name'] if result1 else (result2['name'] if result2 else 'Unknown')
+        
+        # Check for incomplete data
+        if result1 and result1['total'] == 0.0:
+            result1 = None
+            flash(f'No valid results for {name} in {EXAM1_NAME}.', 'warning')
+        if result2 and result2['total'] == 0.0:
+            result2 = None
+            flash(f'No valid results for {name} in {EXAM2_NAME}.', 'warning')
+
+        if not result1 and not result2:
+            return redirect(url_for('index'))
 
         return render_template('results.html', name=name, result1=result1, result2=result2,
                                exam1_name=EXAM1_NAME, exam2_name=EXAM2_NAME)
 
     return render_template('index.html')
 
+# Admin view to see all results
+@app.route('/admin')
+def admin():
+    return render_template('admin.html', exam1=exam1, exam2=exam2,
+                           exam1_name=EXAM1_NAME, exam2_name=EXAM2_NAME)
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
